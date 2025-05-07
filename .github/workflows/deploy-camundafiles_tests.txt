@@ -1,0 +1,80 @@
+name: Deploy Camunda Files and Run Selenium Tests
+
+on:
+    push:
+      paths:
+        - 'processes/**'
+        - 'tests/**'
+
+jobs:
+  deploy:
+    runs-on: arc-runner-set
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Deploy Camunda Files
+      run: |
+            #!/bin/bash
+
+            # Camunda Server URL
+            SERVER_URL="http://10.0.24.77:30000/engine-rest/deployment/create"
+
+            # URLs der .form- und .bpmn-Dateien im Git-Repository (Raw-URLs)
+            FILES=(
+                "https://raw.githubusercontent.com/Bazzako/SemArb4-CD-und-Camunda-BPM/main/processes/Grundgeruest.bpmn"
+                "https://raw.githubusercontent.com/Bazzako/SemArb4-CD-und-Camunda-BPM/main/processes/Abholung.form"
+                "https://raw.githubusercontent.com/Bazzako/SemArb4-CD-und-Camunda-BPM/main/processes/Anmeldeformular.form"
+                "https://raw.githubusercontent.com/Bazzako/SemArb4-CD-und-Camunda-BPM/main/processes/Datenerfassung.form"
+                "https://raw.githubusercontent.com/Bazzako/SemArb4-CD-und-Camunda-BPM/main/processes/Datensicherung.form"
+                "https://raw.githubusercontent.com/Bazzako/SemArb4-CD-und-Camunda-BPM/main/processes/Defektanalyse.form"
+            )
+
+            for URL in "${FILES[@]}"
+            do
+                echo "Lade Datei hoch: $URL"
+
+                FILENAME=$(basename "$URL")
+                curl -s -o "$FILENAME" "$URL"
+
+                curl --location "$SERVER_URL" \
+                    --header 'Content-Type: multipart/form-data' \
+                    --form "upload=@$FILENAME"
+
+                rm "$FILENAME"
+                sleep 1
+            done
+
+            echo "Alle Dateien wurden erfolgreich hochgeladen."
+
+  test:
+    runs-on: arc-runner-set
+
+    services:
+      selenium:
+        image: selenium/standalone-chrome:latest
+        ports:
+          - 4444:4444
+        options: >-
+          --shm-size 2g
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install pytest
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest
+
+    - name: Run Selenium Tests
+      env:
+        SELENIUM_URL: http://localhost:4444/wd/hub
+      run: |
+        pytest tests/

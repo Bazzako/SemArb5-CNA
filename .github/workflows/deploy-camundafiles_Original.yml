@@ -1,0 +1,77 @@
+name: Deploy Camunda Files
+
+on:
+  push:
+    paths:
+      - 'processes/**'
+  
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: arc-runner-set  # Use custom runner
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Deploy Camunda Files
+      run: |
+        #!/bin/bash
+        SERVER_URL="http://10.0.24.89:30000/engine-rest/deployment/create"
+
+        FILES=(
+            "https://raw.githubusercontent.com/Bazzako/SemArb4-CD-und-Camunda-BPM/main/processes/Grundgeruest.bpmn"
+            "https://raw.githubusercontent.com/Bazzako/SemArb4-CD-und-Camunda-BPM/main/processes/Abholung.form"
+            "https://raw.githubusercontent.com/Bazzako/SemArb4-CD-und-Camunda-BPM/main/processes/Anmeldeformular.form"
+            "https://raw.githubusercontent.com/Bazzako/SemArb4-CD-und-Camunda-BPM/main/processes/Datenerfassung.form"
+            "https://raw.githubusercontent.com/Bazzako/SemArb4-CD-und-Camunda-BPM/main/processes/Datensicherung.form"
+            "https://raw.githubusercontent.com/Bazzako/SemArb4-CD-und-Camunda-BPM/main/processes/Defektanalyse.form"
+        )
+
+        for URL in "${FILES[@]}"
+        do
+            echo "Uploading file: $URL"
+            FILENAME=$(basename "$URL")
+            curl -s -o "$FILENAME" "$URL"
+            curl --location "$SERVER_URL" \
+                --header 'Content-Type: multipart/form-data' \
+                --form "upload=@$FILENAME"
+            rm "$FILENAME"
+            sleep 1
+        done
+
+        echo "All files uploaded successfully."
+
+  test:
+    runs-on: arc-runner-set  # Use custom runner
+    needs: deploy
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Install Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      run: |
+        cd tests
+        npm install
+        echo "npx wird installiert"
+        npx playwright install --with-deps
+
+
+    - name: Run Playwright tests
+      run: |
+        cd tests
+        npx playwright test
+
+    - name: Upload Playwright test results (optional)
+      uses: actions/upload-artifact@v3
+      if: failure()
+      with:
+        name: playwright-results
+        path: tests/playwright-report/
