@@ -7,9 +7,9 @@ permalink: /
 
 # Willkommen!
 
-Hier findest du die Dokumentation der 4. Semester Arbeit Orchestrierung eines Geschäftsprozesses mit Kubernetes, CI/CD und Camunda BPM
+Hier findest du die Dokumentation der 5. Semester Arbeit über CNA
 
-In dieser Semesterarbeit wurde ein bestehender Prozess der Firma ISEAG erneuert und verbessert. Dazu wurden verschiedene Tools eingesetzt. Um die Qualitätsverbesserung durchführen zu können, wurde mit dem Qualitätsmanagement *Lean Six Sigma* gearbeitet.
+In dieser Semesterarbeit wird das wissen in Kubernetes vertieft und geübt. Dies dient als Vorbereitung für die Diplomarbeit im nächsten Semester
 
 Diese Webseite wird von Github Pages gehostet.
 Sie wird durch meine Einträge im Gitrepo stetig aktualisiert und erneuert. Test
