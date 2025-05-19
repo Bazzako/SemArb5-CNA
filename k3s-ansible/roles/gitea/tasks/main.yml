@@ -15,7 +15,7 @@
 
 - name: Render Gitea Helm values
   ansible.builtin.template:
-    src: values.yaml.j2
+    src: values.yal.j2
     dest: /tmp/gitea-values.yaml
 
 - name: Install Gitea using Helm
