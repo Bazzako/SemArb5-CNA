@@ -1,0 +1,25 @@
+---
+- name: Add Gitea Helm repository
+  ansible.builtin.command: helm repo add gitea https://dl.gitea.io/charts/
+  register: helm_repo_add
+  changed_when: "'has been added' in helm_repo_add.stdout or 'already exists' not in helm_repo_add.stderr"
+
+- name: Update Helm repositories
+  ansible.builtin.command: helm repo update
+
+- name: Create gitea namespace
+  ansible.builtin.command: kubectl create namespace gitea
+  args:
+    creates: /var/run/secrets/kubernetes.io/serviceaccount/namespace
+  ignore_errors: true
+
+- name: Render Gitea Helm values
+  ansible.builtin.template:
+    src: values.yaml.j2
+    dest: /tmp/gitea-values.yaml
+
+- name: Install Gitea using Helm
+  ansible.builtin.command: >
+    helm upgrade --install gitea gitea/gitea
+    --namespace gitea
+    --values /tmp/gitea-values.yaml

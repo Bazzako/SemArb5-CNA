@@ -11,6 +11,34 @@
     name: policycoreutils  # Used by install script to restore SELinux context
     update_cache: true
 
+- name: Check if Helm is already installed
+  ansible.builtin.command: helm version --short
+  register: helm_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Install Helm on Ubuntu
+  when:
+    - ansible_distribution == 'Ubuntu'
+    - helm_check.rc != 0
+  block:
+    - name: Download Helm install script
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+        dest: /tmp/get_helm.sh
+        mode: '0755'
+
+    - name: Run Helm install script
+      ansible.builtin.command: /tmp/get_helm.sh
+      args:
+        creates: /usr/local/bin/helm
+
+    - name: Remove Helm install script
+      ansible.builtin.file:
+        path: /tmp/get_helm.sh
+        state: absent
+
+
 - name: Enable IPv4 forwarding
   ansible.posix.sysctl:
     name: net.ipv4.ip_forward

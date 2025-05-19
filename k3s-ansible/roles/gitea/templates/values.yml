@@ -1,0 +1,13 @@
+gitea:
+  admin:
+    username: admin
+    password: admin123
+    email: admin@example.com
+
+service:
+  http:
+    type: NodePort
+
+persistence:
+  enabled: true
+  size: 5Gi

@@ -6,6 +6,7 @@
   roles:
     - role: prereq
     - role: airgap
+    - role: gitea
 
 - name: Setup K3S server
   hosts: server
