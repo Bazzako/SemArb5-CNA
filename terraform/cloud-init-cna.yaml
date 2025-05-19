@@ -1,0 +1,32 @@
+#cloud-config
+users:
+  - name: ubuntu
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: users, admin
+    shell: /bin/bash
+    lock_passwd: false
+    plain_text_passwd: 'insecure'   
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDUHol1mBvP5Nwe3Bzbpq4GsHTSw96phXLZ27aPiRdrzhnQ2jMu4kSgv9xFsnpZgBsQa84EhdJQMZz8EOeuhvYuJtmhAVzAvNjjRak+bpxLPdWlox1pLJTuhcIqfTTSfBYJYB68VRAXJ29ocQB7qn7aDj6Cuw3s9IyXoaKhyb4n7I8yI3r0U30NAcMjyvV3LYOXx/JQbX+PjVsJMzp2NlrC7snz8gcSKxUtL/eF0g+WnC75iuhBbKbNPr7QP/ItHaAh9Tv5a3myBLNZQ56SgnSCgmS0EUVeMNsO8XaaKr2H2x5592IIoz7YRyL4wlOmj35bQocwdahdOCFI7nT9fr6f insecure@lerncloud
+# login ssh and console with password
+ssh_pwauth: true
+disable_root: false 
+packages:
+  - jq
+  - shellinabox
+  
+write_files:
+  - path: /usr/local/bin/join-workers.sh
+    permissions: '0755'
+    content: |
+        #!/bin/bash
+        JOIN=$(sudo microk8s add-node --token-ttl 3600 | head -2 | tail -1)
+        for node in cp2 cp3; do
+          IP=$(cat ~/work/server-ip | sed "s/cp1/$node/g")
+          echo "Joining $node ($IP)..."
+          ssh "$IP" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -- "sudo $JOIN"
+          ssh "$IP" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -- "microk8s config | tee ~/.kube/config"
+          ssh "$IP" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -- "sudo mkdir -p /data; sudo mount -t nfs $(cat ~/work/server-ip):/data /data"
+        done
+        
+runcmd:
